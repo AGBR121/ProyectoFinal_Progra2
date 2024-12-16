@@ -1,6 +1,8 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
+#include<windows.h>
+
 typedef struct {
     long int OrderNumber;
     unsigned char LineItems;
@@ -68,6 +70,14 @@ typedef struct {
     char Currency[3];
     float Exchange;
 } ExchangeRates;
+
+void ClearConsole() {
+    #ifdef _WIN32
+        system("cls"); 
+    #else
+        system("clear");  
+    #endif
+}
 
 int NumOfRecords(char file[], int size){
     FILE *fp = fopen(file, "rb");
@@ -484,6 +494,7 @@ void PrintMenu(){
 }
 
 int main(){
+    ClearConsole();
     PrintMenu();
     return 0;
 }
