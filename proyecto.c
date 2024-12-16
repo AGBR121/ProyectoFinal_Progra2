@@ -1,5 +1,6 @@
 #include<stdio.h>
-
+#include<stdlib.h>
+#include<string.h>
 typedef struct {
     long int OrderNumber;
     unsigned char LineItems;
@@ -209,25 +210,280 @@ void CreateCustomersTable(){
 
 void CreateProductsTable(){
     FILE *fp = fopen("Products.dat", "r");
-    FILE *fpProducts = fopen("PRoducts.table", "wb");
+    FILE *fpProducts = fopen("Products.table", "wb");
 
     if(fp == NULL){
-        printf("Error abriendo el archivo Customers.dat");
+        printf("Error abriendo el archivo Products.dat");
         return;
     }
     if(fpProducts == NULL){
-        printf("Error creando la tabla Customers.table");
+        printf("Error creando la tabla Products.table");
         return;
     }
 
     Products product;
     char line[1000];
-    int counter;
+    int counter = 0;
+
     while(fgets(line, sizeof(line), fp)){
-        
+        if(counter != 0){
+            char *token = strtok(line, ","), temp[200] = "";
+            product.ProductKey = (unsigned short int) atoi(token);
+
+            token = strtok(NULL, ",");
+            if(token[0] == '"'){
+                while (token[strlen(token) - 1] != '"'){
+                    strcat(token, strtok(NULL, ","));
+                }
+                strncpy(product.ProductName, token + 1, strlen(token));
+                product.ProductName[strlen(product.ProductName) - 1] = '\0';
+            } else {
+                strcpy(product.ProductName, token);
+            }
+
+            token = strtok(NULL, ",");
+            strcpy(product.Brand, token);
+
+            token = strtok(NULL, ",");
+            strcpy(product.Color, token);
+
+            token = strtok(NULL, ",");
+            if(token[0] == '"'){
+                strcat(token, strtok(NULL, ","));
+                product.UnitCostUSD = atof(strncpy(temp, token + 2, strlen(token)));
+            } else {
+                product.UnitCostUSD = atof(strncpy(temp, token + 1, strlen(token)));
+            }
+
+            token = strtok(NULL, ",");
+            if(token[0] == '"'){
+                strcat(token, strtok(NULL, ","));
+                product.UnitPriceUSD = atof(strncpy(temp, token + 2, strlen(token)));
+            } else {
+                product.UnitPriceUSD = atof(strncpy(temp, token + 1, strlen(token)));
+            }
+
+            token = strtok(NULL, ",");
+            strcpy(product.SubcategoryKey, token);
+
+            token = strtok(NULL, ",");
+            if(token[0] == '"'){
+                strcat(token, strtok(NULL, ","));
+                strncpy(product.Subcategory, token + 1, strlen(token));
+                product.Subcategory[strlen(product.Subcategory) - 1] = '\0';
+            } else {
+                strcpy(product.Subcategory, token);
+            }
+
+            token = strtok(NULL, ",");
+            strcpy(product.CategoryKey, token);
+
+            token = strtok(NULL, ",");
+            if(token[0] == '"'){
+                strcat(token, strtok(NULL, ","));
+                strncpy(product.Category, token + 1, strlen(token));
+                product.Category[strlen(product.Category) - 1] = '\0';
+            } else {
+                strcpy(product.Category, token);
+            }
+
+            fwrite(&product, sizeof(product), 1, fpProducts);
+        }
+        counter++;
     }
+    fclose(fp); fclose(fpProducts);
+}
+
+void CreateStoresTable(){
+    FILE *fp = fopen("Stores.dat", "r");
+    FILE *fpStores = fopen("Stores.table", "wb");
+
+    if(fp == NULL){
+        printf("Error abriendo el archivo Stores.dat");
+        return;
+    }
+    if(fpStores == NULL){
+        printf("Error creando la tabla Stores.table");
+        return;
+    }
+
+    Stores store;
+    char line[100] = "";
+    int counter = 0;
+
+    while(fgets(line, sizeof(line), fp)){
+        if(counter != 0){
+            char *token = strtok(line, ",");
+            store.StoreKey = (unsigned short int) atoi(token);
+
+            token = strtok(NULL, ",");
+            strcpy(store.Country, token);
+
+            token = strtok(NULL, ",");
+            strcpy(store.State, token);
+
+            token = strtok(NULL, ",");
+            if(token[1] == '/' || token [2] == '/'){
+                store.SquareMeters = 0;
+            } else {
+                store.SquareMeters = (unsigned short int) atoi(token);
+                token = strtok(NULL, ",");
+            }
+            unsigned int day = 0, month = 0, year = 0;
+            sscanf(token, "%u/%u/%u", &month, &day, &year);
+            store.OpenDate.MM = (unsigned char) month;
+            store.OpenDate.DD = (unsigned char) day;
+            store.OpenDate.AAAA = (unsigned short int) year;
+
+            fwrite(&store, sizeof(store), 1, fpStores);
+    }
+    counter++;
+    }
+    fclose(fp); fclose(fpStores);
+}
+
+void CreateExchangeRatesTable(){
+    FILE *fp = fopen("Exchange_Rates.dat", "r");
+    FILE *fpRates = fopen("Exchange_Rates.table", "wb");
+
+    if(fp == NULL){
+        printf("Error abriendo el archivo Exchange_Rates.dat");
+        return;
+    }
+    if(fpRates == NULL){
+        printf("Error creando la tabla Exchange_Rates.table");
+        return;
+    }
+
+    ExchangeRates exchange;
+    int counter = 0;
+    char line[200];
+    while(fgets(line, sizeof(line), fp)){
+        if(counter != 0){
+            char *token = strtok(line, ",");
+            strcpy(exchange.Date, token);
+
+            token = strtok(NULL, ",");
+            strncpy(exchange.Currency, token, 3);
+            exchange.Currency[3] = '\0';
+
+            token = strtok(NULL, ",");
+            exchange.Exchange = atof(token);
+
+            fwrite(&exchange, sizeof(exchange), 1, fpRates);
+        }
+        counter++;
+    }
+    fclose(fp); fclose(fpRates);
 }
 
 void FirstPoint(){
+    CreateCustomersTable();
+    CreateExchangeRatesTable();
+    CreateProductsTable();
+    CreateSalesTable();
+    CreateStoresTable();
+}
 
+void PrintMenu(){
+    int security = 0;
+    float option = 0;
+    int program = 1;
+    while(program){
+        printf("\n\n\033[1mCompany Global Electronics Retailer\033[0m\n");
+        printf("Options menu:\n");
+        printf("0. Exit program\n");
+        printf("1. Construction of the Database with the dataset tables\n");
+        printf("2. List of What types of products does the company sell, and where are customers located?\n");
+        printf("   2.1 Utility  bubbleSort\n");
+        printf("   2.2 Utility  mergeSort\n");
+        printf("3. List of Are there any seasonal patterns or trends for order volume or revenue?\n");
+        printf("   3.1 Utility  bubbleSort\n");
+        printf("   3.2 Utility  mergeSort\n");
+        printf("4. List of How long is the average delivery time in days? Has that changed over time?\n");
+        printf("   4.1 Utility  bubbleSort\n");
+        printf("   4.2 Utility  mergeSort\n");
+        printf("5. List of sales order by \"Customer Name\" + \"Order Date\" + \"ProductKey\":\n");
+        printf("   5.1 Utility  bubbleSort\n");
+        printf("   5.2 Utility  mergeSort\n");
+        printf("\nWhat is your option: ");
+        scanf("%f", &option);
+        int value = option*10;
+        switch (value)
+        {
+        case 0: 
+            printf("\n\033[1mExiting program...\033[0m\n");
+            program = 0;
+            break;
+
+        case 10:
+            FirstPoint();
+            security = 1;
+            break;
+        case 21:
+            if(security){
+
+            }else{
+                printf("\nFirst create the dataset tables");
+            }
+            break;
+        case 22:
+            if(security){
+
+            }else{
+                printf("\nFirst create the dataset tables");
+            }
+            break;
+        case 31:
+            if(security){
+
+            }else{
+                printf("\nFirst create the dataset tables");
+            }
+            break;
+        case 32:
+            if(security){
+
+            }else{
+                printf("\nFirst create the dataset tables");
+            }
+            break;
+        case 41:
+            if(security){
+
+            }else{
+                printf("\nFirst create the dataset tables");
+            }
+            break;
+        case 42:
+            if(security){
+
+            }else{
+                printf("\nFirst create the dataset tables");
+            }
+            break;
+        case 51:
+            if(security){
+
+            }else{
+                printf("\nFirst create the dataset tables");
+            }
+            break;
+        case 52:
+            if(security){
+
+            }else{
+                printf("\nFirst create the dataset tables");
+            }
+            break;
+        default:
+            printf("\n\n\033[1mInvalid Option\033[0m\n");
+            break;
+        }
+    }
+}
+
+int main(){
+    PrintMenu();
+    return 0;
 }
